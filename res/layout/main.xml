@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <Button
+        android:id="@+id/btnTeam"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:layout_marginLeft="@dimen/horizontal_padding"
+        android:layout_marginRight="@dimen/horizontal_padding"
+        android:layout_marginTop="@dimen/top_padding"
+        android:text="@string/teams" />
+
+    <Button
+        android:id="@+id/btnMatches"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/horizontal_padding"
+        android:layout_marginRight="@dimen/horizontal_padding"
+        android:text="@string/matches" />
+
+    <Button
+        android:id="@+id/btnAdmin"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginLeft="@dimen/horizontal_padding"
+        android:layout_marginRight="@dimen/horizontal_padding"
+        android:text="@string/admin" />
+
+</LinearLayout>
