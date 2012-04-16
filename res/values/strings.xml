@@ -8,5 +8,6 @@
     <string name="admin">Admin</string>
     <string name="team_number">Team number:</string>
     <string name="data_url">Data URL:</string>
+    <string name="take_photo">Take Photo</string>
 
 </resources>

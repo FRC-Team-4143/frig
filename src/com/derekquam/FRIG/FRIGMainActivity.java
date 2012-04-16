@@ -1,13 +1,13 @@
 package com.derekquam.FRIG;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.Button;
 
 public class FRIGMainActivity extends Activity {
-    /** Called when the activity is first created. */
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -17,7 +17,8 @@ public class FRIGMainActivity extends Activity {
         btnTeams.setOnClickListener(new OnClickListener() {
         	@Override
         	public void onClick(View xView) {
-        		
+        		Intent lIntent = new Intent(FRIGMainActivity.this, FRIGTeamsActivity.class);
+        	    startActivity(lIntent);
         	}
         });
         
@@ -25,7 +26,8 @@ public class FRIGMainActivity extends Activity {
         btnMatches.setOnClickListener(new OnClickListener() {
         	@Override
         	public void onClick(View xView) {
-        		
+        		Intent lIntent = new Intent(FRIGMainActivity.this, FRIGMatchesActivity.class);
+        	    startActivity(lIntent);
         	}
         });
         
