@@ -1,11 +1,12 @@
 package com.derekquam.FRIG;
 
-import java.io.DataInputStream;
+import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 
@@ -15,6 +16,7 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
 import android.net.Uri;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
@@ -204,6 +206,7 @@ public class FRIGTeamActivity extends Activity {
 			// Responses from the server (code and message)
 			int serverResponseCode = connection.getResponseCode();
 			String serverResponseMessage = connection.getResponseMessage();
+			InputStream in = new BufferedInputStream(connection.getInputStream());
 			
 			Toast.makeText(this, serverResponseMessage, Toast.LENGTH_LONG).show();
 
@@ -214,6 +217,7 @@ public class FRIGTeamActivity extends Activity {
 		catch (Exception ex)
 		{
 			//Exception handling
+			Toast.makeText(this, ex.getMessage(), Toast.LENGTH_LONG).show();
 		}
 	}
 }
