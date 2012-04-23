@@ -21,13 +21,15 @@ public final class R {
     public static final class id {
         public static final int btnAdmin=0x7f060006;
         public static final int btnMatches=0x7f060005;
-        public static final int btnTakePic=0x7f060008;
+        public static final int btnTakePic=0x7f060009;
         public static final int btnTeam=0x7f060004;
         public static final int editDataURL=0x7f060003;
         public static final int editTeamNumber=0x7f060001;
+        public static final int gallery=0x7f06000a;
+        public static final int layTeam=0x7f060007;
         public static final int lblDataURL=0x7f060002;
         public static final int lblTeamNumber=0x7f060000;
-        public static final int txtTeamID=0x7f060007;
+        public static final int txtTeamID=0x7f060008;
     }
     public static final class layout {
         public static final int admin=0x7f030000;
@@ -44,4 +46,25 @@ public final class R {
         public static final int team_number=0x7f050004;
         public static final int teams=0x7f050001;
     }
+    public static final class styleable {
+        /** Attributes that can be used with a FRIG.
+           <p>Includes the following attributes:</p>
+           <table>
+           <colgroup align="left" />
+           <colgroup align="left" />
+           <tr><th>Attribute</th><th>Description</th></tr>
+           <tr><td><code>{@link #FRIG_android_galleryItemBackground com.derekquam.FRIG:android_galleryItemBackground}</code></td><td></td></tr>
+           </table>
+           @see #FRIG_android_galleryItemBackground
+         */
+        public static final int[] FRIG = {
+            0x0101004c
+        };
+        /**
+          <p>This symbol is the offset where the {@link com.derekquam.FRIG.R.attr#android_galleryItemBackground}
+          attribute's value can be found in the {@link #FRIG} array.
+          @attr name android:android_galleryItemBackground
+        */
+        public static final int FRIG_android_galleryItemBackground = 0;
+    };
 }

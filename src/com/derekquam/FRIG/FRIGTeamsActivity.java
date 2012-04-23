@@ -37,7 +37,7 @@ public class FRIGTeamsActivity extends ListActivity {
 
 	private String[] getTeams() {
 		try {
-			URL url = new URL("http://www.derekquam.com/frig/TeamList.php");
+			URL url = new URL("http://www.derekquam.com/frig/TeamList.php?plain");
 			URLConnection connection = url.openConnection();
 			connection.connect();
 			InputStream is = connection.getInputStream();
@@ -51,14 +51,7 @@ public class FRIGTeamsActivity extends ListActivity {
 				strTemp = new String(contents, 0, bytesRead);
 				strFileContents += strTemp;
 			}
-			Pattern pattern = Pattern.compile("team=(\\d+)");
-			Matcher matcher = pattern.matcher(strFileContents);
-			List<String> matches = new ArrayList<String>();
-			while(matcher.find()) {
-				matches.add(matcher.group(1));
-			}
-			String[] lRet = new String[matches.size()];
-			matches.toArray(lRet);
+			String[] lRet = strFileContents.split("\\r?\\n?<br>");
 			bis.close();
 			is.close();
 			return lRet;
