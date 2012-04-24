@@ -8,13 +8,17 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.lang.ref.WeakReference;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
 import org.apache.http.client.methods.HttpGet;
 
 import com.derekquam.FRIG.FRIGTeamActivity.ImageDownloader.BitmapDownloaderTask;
@@ -39,11 +43,13 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemSelectedListener;
 import android.widget.BaseAdapter;
 import android.widget.Button;
 import android.widget.Gallery;
 import android.widget.ImageView;
-import android.widget.RelativeLayout;
+
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -52,6 +58,7 @@ public class FRIGTeamActivity extends Activity {
 	private static final int CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE = 100;
 	private Uri fileUri;
 	private String team;
+	private static int nextPic = 1;
 
 	private static boolean cancelPotentialDownload(String url, ImageView imageView) {
 		BitmapDownloaderTask bitmapDownloaderTask = getBitmapDownloaderTask(imageView);
@@ -85,7 +92,7 @@ public class FRIGTeamActivity extends Activity {
 
 		if (!mediaStorageDir.exists()){
 			if (!mediaStorageDir.mkdirs()){
-				Log.d("FRIG", "failed to create directory");
+				Log.d(TAG, "failed to create directory");
 				return null;
 			}
 		}
@@ -111,6 +118,7 @@ public class FRIGTeamActivity extends Activity {
 				strFileContents += strTemp;
 			}
 			String[] lRet = strFileContents.split("\\r?\\n?<br>");
+			nextPic = lRet.length + 1;
 			bis.close();
 			is.close();
 			return lRet;
@@ -141,7 +149,24 @@ public class FRIGTeamActivity extends Activity {
 
 		Gallery gallery = (Gallery) findViewById(R.id.gallery);
 		gallery.setAdapter(new ImageAdapter(this));
+		gallery.setCallbackDuringFling(true);
+		gallery.setOnItemSelectedListener(new OnItemSelectedListener() {
+			TextView lblFileName = (TextView)findViewById(R.id.txtPicNo);
+			
+			@Override
+			public void onItemSelected(AdapterView<?> adapter, View view,
+					int position, long id) {
+				String fileName = (String)adapter.getItemAtPosition(position);
+				lblFileName.setText(fileName);
+			}
 
+			@Override
+			public void onNothingSelected(AdapterView<?> adapter) {
+				lblFileName.setText("");
+			}
+        });
+
+		
 		Button lCamera = (Button)findViewById(R.id.btnTakePic);
 		lCamera.setOnClickListener(new OnClickListener() {
 			@Override
@@ -161,9 +186,10 @@ public class FRIGTeamActivity extends Activity {
 		super.onActivityResult(requestCode, resultCode, data);
 		if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
 			if (resultCode == RESULT_OK) {
-				String outPath = fileUri.getPath().replace(".jpg", "_small.jpg");
+				String outPath = fileUri.getPath().replace(".jpg", "_small-" + nextPic + ".jpg");
 				ResizePicture(fileUri.getPath(), 800, outPath);
 				UploadPicture(outPath);
+				nextPic++;
 				// Image captured and saved to fileUri specified in the Intent
 				Toast.makeText(this, "Image saved to:\n" +
 						fileUri, Toast.LENGTH_LONG).show();
@@ -187,8 +213,6 @@ public class FRIGTeamActivity extends Activity {
 		// Only scale if the source is big enough. This code is just trying to fit a image into a certain width.
 		if(desiredWidth > srcWidth)
 			desiredWidth = srcWidth;
-
-
 
 		// Calculate the correct inSampleSize/scale value. This helps reduce memory use. It should be a power of 2
 		// from: http://stackoverflow.com/questions/477572/android-strange-out-of-memory-issue/823966#823966
@@ -298,6 +322,7 @@ public class FRIGTeamActivity extends Activity {
 	}
 
 	static Bitmap downloadBitmap(String url) {
+		
 		final AndroidHttpClient client = AndroidHttpClient.newInstance("FRIG");
 		final HttpGet getRequest = new HttpGet(url);
 
@@ -413,7 +438,7 @@ public class FRIGTeamActivity extends Activity {
 		}
 
 		public Object getItem(int position) {
-			return position;
+			return pics[position];
 		}
 
 		public long getItemId(int position) {
@@ -433,5 +458,4 @@ public class FRIGTeamActivity extends Activity {
 			return imageView;
 		}
 	}
-
 }

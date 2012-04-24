@@ -2,21 +2,24 @@ package com.derekquam.FRIG;
 
 import java.io.BufferedInputStream;
 import java.io.InputStream;
+import java.net.Authenticator;
+import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import org.apache.http.auth.UsernamePasswordCredentials;
 
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.widget.ArrayAdapter;
 import android.widget.ListView;
 
 public class FRIGTeamsActivity extends ListActivity {
+	private static final String TAG = "FRIGTeamsActivity";
+	
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
@@ -37,6 +40,10 @@ public class FRIGTeamsActivity extends ListActivity {
 
 	private String[] getTeams() {
 		try {
+			Authenticator.setDefault(new Authenticator(){
+			    protected PasswordAuthentication getPasswordAuthentication() {
+			        return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
+			    }});
 			URL url = new URL("http://www.derekquam.com/frig/TeamList.php?plain");
 			URLConnection connection = url.openConnection();
 			connection.connect();
@@ -58,7 +65,7 @@ public class FRIGTeamsActivity extends ListActivity {
 		}
 		catch (Exception ex)
 		{
-			System.out.println(ex.getMessage());
+			Log.d(TAG, "getTeams", ex);
 		}
 		return null;
 	}
