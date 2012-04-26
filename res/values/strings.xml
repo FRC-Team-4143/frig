@@ -9,5 +9,9 @@
     <string name="data_url">Data URL:</string>
     <string name="take_photo">Take New Picture</string>
     <string name="swipe">Swipe for pictures&#8230;</string>
+    <string name="replace">Replace Picture</string>
+    <string name="width">Width</string>
+    <string name="default_width">800</string>
+    <string name="quality">Quality</string>
 
 </resources>

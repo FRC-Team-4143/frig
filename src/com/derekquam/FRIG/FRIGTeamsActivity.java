@@ -7,8 +7,6 @@ import java.net.PasswordAuthentication;
 import java.net.URL;
 import java.net.URLConnection;
 
-import org.apache.http.auth.UsernamePasswordCredentials;
-
 import android.app.ListActivity;
 import android.content.Intent;
 import android.os.Bundle;

@@ -47,4 +47,53 @@
         android:text="Picture 1"
         android:textAppearance="?android:attr/textAppearanceMedium" />
 
+    <Button
+        android:id="@+id/btnReplace"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_toRightOf="@+id/btnTakePic"
+        android:text="@string/replace" />
+
+    <EditText
+        android:id="@+id/txtWidth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/txtWidthLbl"
+        android:layout_below="@+id/txtSwipe"
+        android:hint="@string/width"
+        android:inputType="number"
+        android:text="@string/default_width" >
+
+        <requestFocus />
+    </EditText>
+
+    <TextView
+        android:id="@+id/txtWidthLbl"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBaseline="@+id/txtWidth"
+        android:layout_alignBottom="@+id/txtWidth"
+        android:layout_alignParentLeft="true"
+        android:text="@string/width"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/txtQuality"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentLeft="true"
+        android:layout_below="@+id/txtWidth"
+        android:text="@string/quality"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <SeekBar
+        android:id="@+id/seekQuality"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@+id/txtQuality"
+        android:layout_below="@+id/txtWidth"
+        android:max="100"
+        android:progress="80" />
+
 </RelativeLayout>
