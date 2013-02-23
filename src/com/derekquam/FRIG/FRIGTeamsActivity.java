@@ -1,70 +1,33 @@
 package com.derekquam.FRIG;
 
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.net.Authenticator;
-import java.net.PasswordAuthentication;
-import java.net.URL;
-import java.net.URLConnection;
+import com.derekquam.FRIG.FRIGImageAdapter.Image;
 
-import android.app.ListActivity;
+import android.app.Activity;
 import android.content.Intent;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.View;
-import android.widget.ArrayAdapter;
-import android.widget.ListView;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemClickListener;
+import android.widget.GridView;
 
-public class FRIGTeamsActivity extends ListActivity {
-	private static final String TAG = "FRIGTeamsActivity";
-	
+public class FRIGTeamsActivity extends Activity {
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
+		setContentView(R.layout.teams);
 		
-		String[] lTeams = getTeams();
-		ArrayAdapter<String> lAdapter = new ArrayAdapter<String>(this,
-				android.R.layout.simple_list_item_1, lTeams);
-		setListAdapter(lAdapter);
-	}
-		
-	@Override
-	protected void onListItemClick(ListView l, View v, int position, long id) {
-		String lItem = (String) getListAdapter().getItem(position);
-		Intent lIntent = new Intent(FRIGTeamsActivity.this, FRIGTeamActivity.class);
-		lIntent.putExtra("Team", lItem);
-	    startActivity(lIntent);
-	}
+		GridView gridview = (GridView)findViewById(R.id.gridview);
+		gridview.setAdapter(new FRIGImageAdapter(this, gridview, ""));
 
-	private String[] getTeams() {
-		try {
-			Authenticator.setDefault(new Authenticator(){
-			    protected PasswordAuthentication getPasswordAuthentication() {
-			        return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
-			    }});
-			URL url = new URL("http://www.derekquam.com/frig/TeamList.php?plain");
-			URLConnection connection = url.openConnection();
-			connection.connect();
-			InputStream is = connection.getInputStream();
-			BufferedInputStream bis = new BufferedInputStream(is, 8 * 1024);
-			byte[] contents = new byte[1024];
-
-			int bytesRead = 0;
-			String strFileContents = "";
-			String strTemp = "";
-			while((bytesRead = bis.read(contents)) != -1) { 
-				strTemp = new String(contents, 0, bytesRead);
-				strFileContents += strTemp;
+		gridview.setOnItemClickListener(new OnItemClickListener() {  
+			@Override  
+			public void onItemClick(AdapterView<?> parent, View view, int position,  
+					long id) {
+				Image item = (Image)parent.getAdapter().getItem(position);
+				Intent lIntent = new Intent(FRIGTeamsActivity.this, FRIGTeamActivity.class);
+				lIntent.putExtra("Team", item.name);
+				startActivity(lIntent);
 			}
-			String[] lRet = strFileContents.split("\\r?\\n?<br>");
-			bis.close();
-			is.close();
-			return lRet;
-		}
-		catch (Exception ex)
-		{
-			Log.d(TAG, "getTeams", ex);
-		}
-		return null;
+		});
 	}
 }

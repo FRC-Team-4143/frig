@@ -17,8 +17,6 @@ import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.client.methods.HttpGet;
 
-import com.derekquam.FRIG.FRIGTeamActivity.ImageDownloader.BitmapDownloaderTask;
-
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
@@ -35,12 +33,10 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
-import android.text.Editable;
-import android.text.method.KeyListener;
 import android.util.Log;
-import android.view.KeyEvent;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.View.OnLongClickListener;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemSelectedListener;
@@ -50,9 +46,10 @@ import android.widget.EditText;
 import android.widget.Gallery;
 import android.widget.ImageView;
 import android.widget.SeekBar;
-
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.derekquam.FRIG.FRIGTeamActivity.ImageDownloader.BitmapDownloaderTask;
 
 public class FRIGTeamActivity extends Activity {
 	private static final String TAG = "FRIGTeamActivity";
@@ -174,6 +171,15 @@ public class FRIGTeamActivity extends Activity {
 				lblFileName.setText("");
 			}
         });
+		
+		gallery.setOnLongClickListener(new OnLongClickListener() {
+
+			@Override
+			public boolean onLongClick(View arg0) {
+				// TODO Auto-generated method stub
+				return false;
+			}
+		});
 
 		
 		Button lCamera = (Button)findViewById(R.id.btnTakePic);
