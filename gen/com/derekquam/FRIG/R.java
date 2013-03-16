@@ -20,9 +20,15 @@ public final class R {
     public static final class id {
         public static final int btnReplace=0x7f060006;
         public static final int btnTakePic=0x7f060004;
+        public static final int btnTeamInfo=0x7f06000f;
         public static final int gallery=0x7f060001;
+        public static final int gridview=0x7f060010;
+        public static final int imgImage=0x7f06000c;
         public static final int layTeam=0x7f060000;
         public static final int seekQuality=0x7f06000a;
+        public static final int teamPics=0x7f06000e;
+        public static final int team_icon=0x7f06000b;
+        public static final int txtImage=0x7f06000d;
         public static final int txtPicNo=0x7f060002;
         public static final int txtQuality=0x7f060009;
         public static final int txtSwipe=0x7f060005;
@@ -32,7 +38,9 @@ public final class R {
     }
     public static final class layout {
         public static final int team=0x7f030000;
-        public static final int teams=0x7f030001;
+        public static final int team_icon=0x7f030001;
+        public static final int team_new=0x7f030002;
+        public static final int teams=0x7f030003;
     }
     public static final class string {
         public static final int admin=0x7f050003;
@@ -44,6 +52,7 @@ public final class R {
         public static final int replace=0x7f050008;
         public static final int swipe=0x7f050007;
         public static final int take_photo=0x7f050006;
+        public static final int team_info=0x7f05000c;
         public static final int team_number=0x7f050004;
         public static final int teams=0x7f050001;
         public static final int width=0x7f050009;

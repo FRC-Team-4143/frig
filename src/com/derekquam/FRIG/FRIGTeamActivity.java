@@ -6,29 +6,23 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.InputStream;
-import java.lang.ref.WeakReference;
 import java.net.HttpURLConnection;
 import java.net.URL;
-import java.net.URLConnection;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.HttpStatus;
-import org.apache.http.client.methods.HttpGet;
+import com.derekquam.FRIG.FRIGImageAdapter.Image;
 
 import android.app.Activity;
-import android.content.Context;
+import android.app.AlertDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.res.TypedArray;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.drawable.ColorDrawable;
-import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.net.http.AndroidHttpClient;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
@@ -37,19 +31,10 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
-import android.view.ViewGroup;
-import android.widget.AdapterView;
-import android.widget.AdapterView.OnItemSelectedListener;
-import android.widget.BaseAdapter;
 import android.widget.Button;
-import android.widget.EditText;
-import android.widget.Gallery;
-import android.widget.ImageView;
-import android.widget.SeekBar;
+import android.widget.GridView;
 import android.widget.TextView;
 import android.widget.Toast;
-
-import com.derekquam.FRIG.FRIGTeamActivity.ImageDownloader.BitmapDownloaderTask;
 
 public class FRIGTeamActivity extends Activity {
 	private static final String TAG = "FRIGTeamActivity";
@@ -60,87 +45,38 @@ public class FRIGTeamActivity extends Activity {
 	private static int nextPic = 1;
 	private static int picNo = 1;
 	private static int width = 800;
-	private static int quality = 80;
-
-	private static boolean cancelPotentialDownload(String url, ImageView imageView) {
-		BitmapDownloaderTask bitmapDownloaderTask = getBitmapDownloaderTask(imageView);
-
-		if (bitmapDownloaderTask != null) {
-			String bitmapUrl = bitmapDownloaderTask.url;
-			if ((bitmapUrl == null) || (!bitmapUrl.equals(url))) {
-				bitmapDownloaderTask.cancel(true);
-			} else {
-				// The same URL is already being downloaded.
-				return false;
-			}
-		}
-		return true;
-	}
-
-	private static BitmapDownloaderTask getBitmapDownloaderTask(ImageView imageView) {
-		if (imageView != null) {
-			Drawable drawable = imageView.getDrawable();
-			if (drawable instanceof DownloadedDrawable) {
-				DownloadedDrawable downloadedDrawable = (DownloadedDrawable)drawable;
-				return downloadedDrawable.getBitmapDownloaderTask();
-			}
-		}
-		return null;
-	}
+	private static int quality = 70;
+	private UploadPictureTask mUploader;
+	private GridView mGallery;
+	
 
 	private static Uri getOutputPictureFileUri(String teamName) {
+		File cacheDir = new File(Environment.getDownloadCacheDirectory(), "FRIG");
 		File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
 				Environment.DIRECTORY_PICTURES), "FRIG");
 
-		if (!mediaStorageDir.exists()){
-			if (!mediaStorageDir.mkdirs()){
+		if (!cacheDir.exists()){
+			if (!cacheDir.mkdirs()){
 				Log.d(TAG, "failed to create directory");
 				return null;
 			}
 		}
 
-		return Uri.fromFile(new File(mediaStorageDir.getPath() + File.separator +
+		return Uri.fromFile(new File(cacheDir.getPath() + File.separator +
 				teamName + ".jpg"));
-	}
-
-	private String[] GetCurrentPictures(String team) {
-		try {
-			URL url = new URL("http://www.derekquam.com/frig/TeamPics.php?team=" + team);
-			URLConnection connection = url.openConnection();
-			connection.connect();
-			InputStream is = connection.getInputStream();
-			BufferedInputStream bis = new BufferedInputStream(is, 8 * 1024);
-			byte[] contents = new byte[1024];
-
-			int bytesRead = 0;
-			String strFileContents = "";
-			String strTemp = "";
-			while((bytesRead = bis.read(contents)) != -1) { 
-				strTemp = new String(contents, 0, bytesRead);
-				strFileContents += strTemp;
-			}
-			String[] lRet = strFileContents.split("\\r?\\n?<br>");
-			nextPic = lRet.length + 1;
-			bis.close();
-			is.close();
-			return lRet;
-		}
-		catch (Exception ex)
-		{
-			Log.d(TAG, "GetCurrentPictures", ex);
-		}
-		return null;
 	}
 
 	@Override
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
-		setContentView(R.layout.team);
+		setContentView(R.layout.team_new);
 
 		Bundle lExtras = getIntent().getExtras();
 		if (lExtras == null) {
 			return;
 		}
+		
+		mUploader = new UploadPictureTask();
 
 		// Get data via the key
 		team = lExtras.getString("Team");
@@ -148,35 +84,23 @@ public class FRIGTeamActivity extends Activity {
 			TextView lblTeam = (TextView)findViewById(R.id.txtTeamID);
 			lblTeam.setText("Team " + team);
 		}
-		
-		final EditText txtWidth = (EditText)findViewById(R.id.txtWidth);
-		final SeekBar seekQuality = (SeekBar)findViewById(R.id.seekQuality);
 
-		final Gallery gallery = (Gallery) findViewById(R.id.gallery);
-		gallery.setAdapter(new ImageAdapter(this));
-		gallery.setCallbackDuringFling(true);
-		gallery.setOnItemSelectedListener(new OnItemSelectedListener() {
-			TextView lblFileName = (TextView)findViewById(R.id.txtPicNo);
-			
-			@Override
-			public void onItemSelected(AdapterView<?> adapter, View view,
-					int position, long id) {
-				String labelName = (position + 1) + " of " + adapter.getCount();
-				String fileName = (String)adapter.getItemAtPosition(position);
-				lblFileName.setText(labelName);
-			}
-
-			@Override
-			public void onNothingSelected(AdapterView<?> adapter) {
-				lblFileName.setText("");
-			}
-        });
-		
-		gallery.setOnLongClickListener(new OnLongClickListener() {
+		mGallery = (GridView)findViewById(R.id.teamPics);
+		mGallery.setAdapter(new FRIGImageAdapter(this, mGallery, team));
+		mGallery.setOnLongClickListener(new OnLongClickListener() {
 
 			@Override
 			public boolean onLongClick(View arg0) {
-				// TODO Auto-generated method stub
+				AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(arg0.getContext());                      
+				dlgAlert.setTitle("Default"); 
+				dlgAlert.setMessage("Make this the default image?"); 
+				dlgAlert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int whichButton) {
+						finish(); 
+					}
+				});
+				dlgAlert.setCancelable(true);
+				dlgAlert.create().show();
 				return false;
 			}
 		});
@@ -186,30 +110,12 @@ public class FRIGTeamActivity extends Activity {
 		lCamera.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(View xView) {
-				width = Integer.parseInt(txtWidth.getText().toString());
-				quality = seekQuality.getProgress();
 				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 				fileUri = getOutputPictureFileUri(team); 
 				intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
 
 				// start the image capture Intent
 				startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
-			}
-		});
-		
-		Button lReplace = (Button)findViewById(R.id.btnReplace);
-		lReplace.setOnClickListener(new OnClickListener() {
-			@Override
-			public void onClick(View xView) {
-				width = Integer.parseInt(txtWidth.getText().toString());
-				quality = seekQuality.getProgress();
-				Intent intent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-				fileUri = getOutputPictureFileUri(team); 
-				intent.putExtra(MediaStore.EXTRA_OUTPUT, fileUri);
-				picNo = gallery.getLastVisiblePosition() + 1;
-
-				// start the image capture Intent
-				startActivityForResult(intent, REPLACE_IMAGE_ACTIVITY_REQUEST_CODE);
 			}
 		});
 	}
@@ -221,16 +127,10 @@ public class FRIGTeamActivity extends Activity {
 				requestCode == REPLACE_IMAGE_ACTIVITY_REQUEST_CODE) {
 			if (resultCode == RESULT_OK) {
 				if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-					picNo = nextPic;
+					picNo = mGallery.getAdapter().getCount() + 1;
 				}
-				String outPath = fileUri.getPath().replace(".jpg", "_small-" + picNo + ".jpg");
-				ResizePicture(fileUri.getPath(), width, outPath);
-				if (UploadPicture(outPath) && requestCode ==  CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-					nextPic++;
-				}
-				// Image captured and saved to fileUri specified in the Intent
-				Toast.makeText(this, "Image saved to:\n" +
-						fileUri, Toast.LENGTH_LONG).show();
+				String outPath = ResizePicture(fileUri.getPath(), width);
+				mUploader.execute(outPath);
 			} else if (resultCode == RESULT_CANCELED) {
 				// User cancelled the image capture
 			} else {
@@ -239,7 +139,7 @@ public class FRIGTeamActivity extends Activity {
 		}
 	}
 
-	protected void ResizePicture(String imagePath, int desiredWidth, String imageOutPath) {
+	protected String ResizePicture(String imagePath, int desiredWidth) {
 		// Get the source image's dimensions
 		BitmapFactory.Options options = new BitmapFactory.Options();
 		options.inJustDecodeBounds = true;
@@ -280,12 +180,21 @@ public class FRIGTeamActivity extends Activity {
 		// Save
 		FileOutputStream out;
 		try {
-			out = new FileOutputStream(imageOutPath);
+			out = new FileOutputStream(imagePath);
 			scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, out);
+			out.close();
+			File lOriginal = new File(imagePath);
+			File lHashFile = new File(new File(Environment.getDownloadCacheDirectory(), "FRIG"),
+					getSha1(imagePath));
+			lOriginal.renameTo(lHashFile);
 			scaledBitmap = null;
+			return lHashFile.getAbsolutePath();
 		} catch (FileNotFoundException ex) {
 			Log.d(TAG, "ResizePicture", ex);
+		} catch (IOException ex) {
+			Log.d(TAG, "ResizePicture", ex);
 		}
+		return "";
 	}
 
 	protected boolean UploadPicture(String imagePath) {
@@ -364,142 +273,50 @@ public class FRIGTeamActivity extends Activity {
 		}
 		return false;
 	}
-
-	static Bitmap downloadBitmap(String url) {
-		
-		final AndroidHttpClient client = AndroidHttpClient.newInstance("FRIG");
-		final HttpGet getRequest = new HttpGet(url);
-
-		try {
-			HttpResponse response = client.execute(getRequest);
-			final int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode != HttpStatus.SC_OK) { 
-				Log.w("ImageDownloader", "Error " + statusCode + " while retrieving bitmap from " + url); 
-				return null;
-			}
-
-			final HttpEntity entity = response.getEntity();
-			if (entity != null) {
-				InputStream inputStream = null;
-				try {
-					inputStream = entity.getContent(); 
-					final Bitmap bitmap = BitmapFactory.decodeStream(inputStream);
-					return bitmap;
-				} finally {
-					if (inputStream != null) {
-						inputStream.close();  
-					}
-					entity.consumeContent();
-				}
-			}
-		} catch (Exception e) {
-			// Could provide a more explicit error message for IOException or IllegalStateException
-			getRequest.abort();
-			Log.d("ImageDownloader", "Error while retrieving bitmap from " + url, e);
-		} finally {
-			if (client != null) {
-				client.close();
-			}
-		}
-		return null;
-	}
-
-	public class ImageDownloader {
-
-		public void download(String url, ImageView imageView) {
-			if (cancelPotentialDownload(url, imageView)) {
-				BitmapDownloaderTask task = new BitmapDownloaderTask(imageView);
-				DownloadedDrawable downloadedDrawable = new DownloadedDrawable(task);
-				imageView.setImageDrawable(downloadedDrawable);
-				task.execute(url);
-			}
-		}
-
-		class BitmapDownloaderTask extends AsyncTask<String, Void, Bitmap> {
-			private String url;
-			private final WeakReference<ImageView> imageViewReference;
-
-			public BitmapDownloaderTask(ImageView imageView) {
-				imageViewReference = new WeakReference<ImageView>(imageView);
-			}
-
-			@Override
-			// Actual download method, run in the task thread
-			protected Bitmap doInBackground(String... params) {
-				// params comes from the execute() call: params[0] is the url.
-				return downloadBitmap(params[0]);
-			}
-
-			@Override
-			// Once the image is downloaded, associates it to the imageView
-			protected void onPostExecute(Bitmap bitmap) {
-				if (isCancelled()) {
-					bitmap = null;
-				}
-
-				if (imageViewReference != null) {
-					ImageView imageView = imageViewReference.get();
-					BitmapDownloaderTask bitmapDownloaderTask = getBitmapDownloaderTask(imageView);
-					// Change bitmap only if this process is still associated with it
-					if (this == bitmapDownloaderTask) {
-						imageView.setImageBitmap(bitmap);
-					}
-				}
-			}
-		}
-	}
-
-	static class DownloadedDrawable extends ColorDrawable {
-		private final WeakReference<BitmapDownloaderTask> bitmapDownloaderTaskReference;
-
-		public DownloadedDrawable(BitmapDownloaderTask bitmapDownloaderTask) {
-			super(Color.BLACK);
-			bitmapDownloaderTaskReference =
-					new WeakReference<BitmapDownloaderTask>(bitmapDownloaderTask);
-		}
-
-		public BitmapDownloaderTask getBitmapDownloaderTask() {
-			return bitmapDownloaderTaskReference.get();
-		}
-	}
-
-	public class ImageAdapter extends BaseAdapter {
-		int mGalleryItemBackground;
-		private Context mContext;
-
-		String[] pics = GetCurrentPictures(team);
-
-		public ImageAdapter(Context c) {
-			mContext = c;
-			TypedArray attr = mContext.obtainStyledAttributes(R.styleable.FRIG);
-			mGalleryItemBackground = attr.getResourceId(
-					R.styleable.FRIG_android_galleryItemBackground, 0);
-			attr.recycle();
-		}
-
-		public int getCount() {
-			return pics.length;
-		}
-
-		public Object getItem(int position) {
-			return pics[position];
-		}
-
-		public long getItemId(int position) {
-			return position;
-		}
+	
+	public class UploadPictureTask extends AsyncTask<String, Void, Void> {
 
 		@Override
-		public View getView(int position, View convertView, ViewGroup parent) {
-			ImageView imageView = new ImageView(mContext);
-
-			ImageDownloader downloader = new ImageDownloader();
-			downloader.download(pics[position], imageView);
-			imageView.setLayoutParams(new Gallery.LayoutParams(ViewGroup.LayoutParams.FILL_PARENT, 300));
-			imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-			imageView.setBackgroundResource(mGalleryItemBackground);
-
-			return imageView;
+		protected Void doInBackground(String... params) {
+			// iterate over all images ...
+			for (String i : params) {
+				if(isCancelled()) return null;
+				UploadPicture(i);
+			}
+			return null;
 		}
+		
+	}
+	
+	private String getSha1(String file) throws IOException {
+		FileInputStream in;
+		try {
+			in = new FileInputStream(file);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return "";
+		}
+		MessageDigest digester;
+		try {
+			digester = MessageDigest.getInstance("sha1");
+		} catch (NoSuchAlgorithmException e) {
+			e.printStackTrace();
+			return "";
+		}
+		byte[] bytes = new byte[8192];
+		int byteCount;
+		int total = 0;
+		try {
+			while ((byteCount = in.read(bytes)) > 0) {
+			    total += byteCount;
+			    digester.update(bytes, 0, byteCount);
+			    Log.d("sha", "processed " + total);
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+			return "";
+		}
+		in.close();
+		return digester.toString();
 	}
 }

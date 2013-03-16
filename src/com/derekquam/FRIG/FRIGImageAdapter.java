@@ -10,18 +10,23 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 
+import org.apache.http.entity.SerializableEntity;
+
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Color;
+import android.graphics.Bitmap.CompressFormat;
 import android.os.AsyncTask;
-import android.os.SystemClock;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.GridView;
 import android.widget.ImageView;
 import android.widget.ImageView.ScaleType;
+import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 public class FRIGImageAdapter extends BaseAdapter {
@@ -42,15 +47,16 @@ public class FRIGImageAdapter extends BaseAdapter {
 	// the background task objects
 	private LoadThumbsTask mThumbnailGen;
 	private GetDataTask mDataGetter;
+	private DiskLruImageCache mCache;
 
 	// Constructor
 	public FRIGImageAdapter(Context c, Object previousList, String team) {
-
 		mContext = c;
 
 		// get our thumbnail generation task ready to execute
 		mThumbnailGen = new LoadThumbsTask();
 		mImages = new ArrayList<Image>();
+		mCache = new DiskLruImageCache(c, "FRIG", 52428800, CompressFormat.JPEG, 70);
 		Image defaultImage = new Image();
 		defaultImage.url = "";
 		defaultImage.name = "Default";
@@ -58,15 +64,15 @@ public class FRIGImageAdapter extends BaseAdapter {
 		mImages.add(defaultImage);
 
 		// we'll want to use pre-existing data, if it exists
-//		if(previousList != null) {
-//			mImages = (Image[]) previousList;
-//
-//			// continue processing remaining thumbs in the background
-//			mThumbnailGen.execute(mImages);
-//
-//			// no more setup required in this constructor
-//			return;
-//		}
+		//		if(previousList != null) {
+		//			mImages = (Image[]) previousList;
+		//
+		//			// continue processing remaining thumbs in the background
+		//			mThumbnailGen.execute(mImages);
+		//
+		//			// no more setup required in this constructor
+		//			return;
+		//		}
 
 		// if no pre-existing data, we need to generate it from scratch.
 		mGetAll = team.isEmpty();
@@ -77,18 +83,23 @@ public class FRIGImageAdapter extends BaseAdapter {
 			mDataGetter.execute("http://www.derekquam.com/frig/TeamPics.php?team=" + team);
 		}
 	}
-	
+
 	private void dataGot(String[] data) {
 		if (data != null) {
 			mImages.clear();
 			for(int i = 0, j = data.length; i < j; i++) {
 				mImages.add(new Image());
-				mImages.get(i).name = data[i];
+				if (mGetAll) {
+					mImages.get(i).name = data[i];
+				} else {
+					mImages.get(i).name = "";
+				}
 				if (mGetAll) {
 					mImages.get(i).url =  "http://www.derekquam.com/frig/images/" + data[i] + "-1.jpg";
 				} else {
 					mImages.get(i).url = data[i];
 				}
+				this.notifyDataSetChanged();
 			}
 		}
 
@@ -117,7 +128,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 	 * Getter: return URL at specified position
 	 */
 	public Object getItem(int position) {
-		return mImages.get(position).url;
+		return mImages.get(position);
 	}
 
 
@@ -139,7 +150,6 @@ public class FRIGImageAdapter extends BaseAdapter {
 		if(mThumbnailGen != null && mThumbnailGen.getStatus() != AsyncTask.Status.FINISHED) {
 			// cancel the task
 			mThumbnailGen.cancel(true);
-
 		}
 
 		// return generated thumbs
@@ -153,34 +163,38 @@ public class FRIGImageAdapter extends BaseAdapter {
 	 */
 	@Override
 	public View getView(int position, View convertView, ViewGroup parent) {
-		ImageView imgView;
+		ThumbnailView view;
 
 		// pull the cached data for the image assigned to this position
 		Image cached = mImages.get(position);
-
+		int width = parent.getWidth();
+		
 		// can we recycle an old view?
 		if(convertView == null) {
 			// no view to recycle; create a new view
-			imgView = new ImageView(mContext);
-			int width = parent.getWidth();
-			imgView.setLayoutParams(new GridView.LayoutParams(width / 2, width / 2));
+			if (mGetAll) {
+				view = new IconView(mContext, cached);
+			} else {
+				view  = new ThumbnailView(mContext, cached);
+			}
+			view.setLayoutParams(new GridView.LayoutParams(width / 2, width / 2));
 		} else {
 			// recycle an old view (it might have old thumbs in it!)
-			imgView = (ImageView) convertView;
+			view = (ThumbnailView)convertView;
 		}
 
 		// do we have a thumb stored in cache?
 		if(cached.thumb == null) {
 			// no cached thumb, so let's set the view as blank
-			imgView.setImageResource(R.drawable.ic_launcher);		
-			imgView.setScaleType(ScaleType.CENTER);
+			view.setImage(R.drawable.ic_launcher);
 		} else {
 			// yes, cached thumb! use that image
-			imgView.setScaleType(ScaleType.CENTER_CROP);
-			imgView.setImageBitmap(cached.thumb);
+			view.setImage(cached.thumb);
 		}
-
-		return imgView;
+		if (mGetAll) {
+			((IconView) view).SetText(cached.name);
+		}
+		return view;
 	}
 
 
@@ -197,7 +211,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 	 * Download and return a thumb specified by url, subsampling 
 	 * it to a smaller size.
 	 */
-	private Bitmap loadThumb(String url) {
+	private Bitmap downloadThumb(String url) {
 
 		// the downloaded thumb (none for now!)
 		Bitmap thumb = null;
@@ -251,13 +265,17 @@ public class FRIGImageAdapter extends BaseAdapter {
 				if(isCancelled()) return null;
 
 				// skip a thumb if it's already been generated
-				if(i.thumb != null) continue;
-
-				// artificially cause latency!
-				//SystemClock.sleep(500);
-
-				// download and generate a thumb for this image
-				i.thumb = loadThumb(i.url);
+				if (i.thumb != null) continue;
+				
+				// check cache
+				if (mCache.containsKey(i.name)) {
+					i.thumb = mCache.getBitmap(i.name);
+				} else { // download thumb
+					i.thumb = downloadThumb(i.url);
+					if (i.thumb != null) {
+						mCache.put(i.name, i.thumb);
+					}
+				}
 
 				// some unit of work has been completed, update the UI
 				publishProgress();
@@ -328,4 +346,58 @@ public class FRIGImageAdapter extends BaseAdapter {
 			dataGot(result);
 		}
 	}
+	
+	class IconView extends ThumbnailView {
+		
+		private TextView mTextView;
+
+		public IconView(Context context, Image image) {
+			super(context, image);
+			mTextView = new TextView(context);
+			mTextView.setText(image.name);
+			mTextView.setTextSize(25);
+			mTextView.setTextColor(Color.WHITE);
+			mTextView.setBackgroundColor(0xaa888888);
+
+			LayoutParams textLayout = new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.WRAP_CONTENT);
+			textLayout.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM);
+			addView(mTextView, textLayout);
+			mTextView.setGravity(Gravity.CENTER_HORIZONTAL | Gravity.BOTTOM);
+		}
+
+		public void SetText(String name) {
+			mTextView.setText(name);
+			this.postInvalidate();
+		}
+	}
+	
+	class ThumbnailView extends RelativeLayout {
+		
+		private ImageView mImgView;
+
+		public ThumbnailView(Context context, Image image) {
+			super(context);
+			
+			mImgView = new ImageView(context);
+			mImgView.setImageBitmap(image.thumb);
+			mImgView.setScaleType(ScaleType.CENTER_CROP);
+
+			addView(mImgView, 
+					new RelativeLayout.LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT));
+		}
+
+		public void setImage(Bitmap thumb) {
+			mImgView.setScaleType(ScaleType.CENTER_CROP);
+			mImgView.setImageBitmap(thumb);
+			this.postInvalidate();
+		}
+
+		public void setImage(int icLauncher) {
+			mImgView.setImageResource(icLauncher);
+			mImgView.setScaleType(ScaleType.CENTER);
+			this.postInvalidate();
+		}
+	}
+	
+
 }

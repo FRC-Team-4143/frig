@@ -1,6 +1,23 @@
 <?xml version="1.0" encoding="utf-8"?>
-<TextView xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/textView"
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="wrap_content"
     android:layout_height="wrap_content"
-    android:gravity="center"/>
+    android:id="@+id/team_icon" >
+
+    <ImageView
+        android:id="@+id/imgImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content" />
+
+    <TextView
+        android:id="@+id/txtImage"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignBottom="@+id/imgImage"
+        android:layout_alignLeft="@+id/imgImage"
+        android:layout_alignRight="@+id/imgImage"
+        android:layout_alignTop="@+id/imgImage"
+        android:layout_margin="1dp"
+        android:gravity="bottom" />
+
+</RelativeLayout>
