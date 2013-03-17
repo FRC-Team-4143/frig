@@ -25,7 +25,7 @@ public class FRIGTeamsActivity extends Activity {
 					long id) {
 				Image item = (Image) parent.getAdapter().getItem(position);
 				Intent lIntent = new Intent(FRIGTeamsActivity.this, FRIGTeamActivity.class);
-				lIntent.putExtra("Team", item.name);
+				lIntent.putExtra("Team", item.caption);
 				startActivity(lIntent);
 			}
 		});

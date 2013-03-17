@@ -8,8 +8,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.UnsupportedEncodingException;
+import java.net.Authenticator;
 import java.net.HttpURLConnection;
+import java.net.PasswordAuthentication;
 import java.net.URL;
+import java.net.URLConnection;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
@@ -31,6 +35,8 @@ import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.View.OnLongClickListener;
+import android.widget.AdapterView;
+import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.TextView;
@@ -48,6 +54,7 @@ public class FRIGTeamActivity extends Activity {
 	private static int quality = 70;
 	private UploadPictureTask mUploader;
 	private GridView mGallery;
+	private static File mCacheDir;
 	
 
 	private static Uri getOutputPictureFileUri(String teamName) {
@@ -55,14 +62,14 @@ public class FRIGTeamActivity extends Activity {
 		File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
 				Environment.DIRECTORY_PICTURES), "FRIG");
 
-		if (!cacheDir.exists()){
-			if (!cacheDir.mkdirs()){
+		if (!mediaStorageDir.exists()){
+			if (!mediaStorageDir.mkdir()){
 				Log.d(TAG, "failed to create directory");
 				return null;
 			}
 		}
 
-		return Uri.fromFile(new File(cacheDir.getPath() + File.separator +
+		return Uri.fromFile(new File(mediaStorageDir.getPath() + File.separator +
 				teamName + ".jpg"));
 	}
 
@@ -70,13 +77,12 @@ public class FRIGTeamActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.team_new);
+		mCacheDir = getCacheDir();
 
 		Bundle lExtras = getIntent().getExtras();
 		if (lExtras == null) {
 			return;
 		}
-		
-		mUploader = new UploadPictureTask();
 
 		// Get data via the key
 		team = lExtras.getString("Team");
@@ -86,23 +92,33 @@ public class FRIGTeamActivity extends Activity {
 		}
 
 		mGallery = (GridView)findViewById(R.id.teamPics);
+		mGallery.setClickable(true);
 		mGallery.setAdapter(new FRIGImageAdapter(this, mGallery, team));
-		mGallery.setOnLongClickListener(new OnLongClickListener() {
+		mGallery.setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
-			public boolean onLongClick(View arg0) {
+			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
+					int arg2, long arg3) {
 				AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(arg0.getContext());                      
 				dlgAlert.setTitle("Default"); 
 				dlgAlert.setMessage("Make this the default image?"); 
-				dlgAlert.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+				dlgAlert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int whichButton) {
-						finish(); 
+						SetDefault task = new SetDefault();
+						task.execute(team, );
+						dialog.dismiss();
+					}
+				});
+				dlgAlert.setNegativeButton("No", new DialogInterface.OnClickListener() {
+					public void onClick(DialogInterface dialog, int whichButton) {
+						dialog.cancel();
 					}
 				});
 				dlgAlert.setCancelable(true);
 				dlgAlert.create().show();
-				return false;
+				return true;
 			}
+			
 		});
 
 		
@@ -120,6 +136,10 @@ public class FRIGTeamActivity extends Activity {
 		});
 	}
 
+	private void pictureUploaded() {
+		((FRIGImageAdapter) mGallery.getAdapter()).refresh();
+	}
+	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		super.onActivityResult(requestCode, resultCode, data);
@@ -130,6 +150,7 @@ public class FRIGTeamActivity extends Activity {
 					picNo = mGallery.getAdapter().getCount() + 1;
 				}
 				String outPath = ResizePicture(fileUri.getPath(), width);
+				mUploader = new UploadPictureTask();
 				mUploader.execute(outPath);
 			} else if (resultCode == RESULT_CANCELED) {
 				// User cancelled the image capture
@@ -184,8 +205,9 @@ public class FRIGTeamActivity extends Activity {
 			scaledBitmap.compress(Bitmap.CompressFormat.JPEG, quality, out);
 			out.close();
 			File lOriginal = new File(imagePath);
-			File lHashFile = new File(new File(Environment.getDownloadCacheDirectory(), "FRIG"),
-					getSha1(imagePath));
+			File lHashFile = new File(new File(Environment.getExternalStoragePublicDirectory(
+					Environment.DIRECTORY_PICTURES), "FRIG"),
+					AeSimpleSHA1.SHA1(imagePath) + ".jpg");
 			lOriginal.renameTo(lHashFile);
 			scaledBitmap = null;
 			return lHashFile.getAbsolutePath();
@@ -193,6 +215,9 @@ public class FRIGTeamActivity extends Activity {
 			Log.d(TAG, "ResizePicture", ex);
 		} catch (IOException ex) {
 			Log.d(TAG, "ResizePicture", ex);
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 		return "";
 	}
@@ -230,6 +255,8 @@ public class FRIGTeamActivity extends Activity {
 
 			outputStream = new DataOutputStream( connection.getOutputStream() );
 			outputStream.writeBytes(twoHyphens + boundary + lineEnd);
+			outputStream.writeBytes("Content-Disposition: form-data; name=\"team\"" + lineEnd + lineEnd);
+			outputStream.writeBytes(team + lineEnd + twoHyphens + boundary + lineEnd);
 			outputStream.writeBytes("Content-Disposition: form-data; name=\"uploadedfile\";filename=\"" + imagePath +"\"" + lineEnd);
 			outputStream.writeBytes(lineEnd);
 
@@ -256,8 +283,6 @@ public class FRIGTeamActivity extends Activity {
 			String serverResponseMessage = connection.getResponseMessage();
 			InputStream in = new BufferedInputStream(connection.getInputStream());
 
-			Toast.makeText(this, serverResponseMessage, Toast.LENGTH_LONG).show();
-
 			fileInputStream.close();
 			outputStream.flush();
 			outputStream.close();
@@ -274,49 +299,102 @@ public class FRIGTeamActivity extends Activity {
 		return false;
 	}
 	
-	public class UploadPictureTask extends AsyncTask<String, Void, Void> {
+	public class UploadPictureTask extends AsyncTask<String, Void, Boolean> {
 
 		@Override
-		protected Void doInBackground(String... params) {
+		protected Boolean doInBackground(String... params) {
 			// iterate over all images ...
+			Boolean lReturn = false;
 			for (String i : params) {
-				if(isCancelled()) return null;
-				UploadPicture(i);
+				if(isCancelled()) return false;
+				if (UploadPicture(i)) {
+					lReturn = true;
+				}
 			}
-			return null;
+			return lReturn;
+		}
+		
+		protected void onPostExecute(Boolean results) {
+			if (results) {
+				pictureUploaded();
+			}
 		}
 		
 	}
 	
-	private String getSha1(String file) throws IOException {
-		FileInputStream in;
-		try {
-			in = new FileInputStream(file);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return "";
+	public class SetDefault extends AsyncTask<String, Void, Void> {
+
+		@Override
+		protected Void doInBackground(String... params) {
+			if (params.length != 2) {
+				return null;
+			}
+			makeDefault(params[0], params[1]);
+			return null;
 		}
-		MessageDigest digester;
-		try {
-			digester = MessageDigest.getInstance("sha1");
-		} catch (NoSuchAlgorithmException e) {
-			e.printStackTrace();
-			return "";
+		
+		private Boolean makeDefault(String team, String image) {
+			try {
+				Authenticator.setDefault(new Authenticator() {
+					protected PasswordAuthentication getPasswordAuthentication() {
+						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
+					}
+				});
+				URL url = new URL("http://www.derekquam.com/frig/set_default.php?team=" + team + "&image=" + image);
+				URLConnection connection = url.openConnection();
+				connection.connect();
+				InputStream is = connection.getInputStream();
+				BufferedInputStream bis = new BufferedInputStream(is, 8 * 1024);
+				byte[] contents = new byte[1024];
+
+				int bytesRead = 0;
+				String strFileContents = "";
+				String strTemp = "";
+				while((bytesRead = bis.read(contents)) != -1) { 
+					strTemp = new String(contents, 0, bytesRead);
+					strFileContents += strTemp;
+				}
+				String[] lRet = strFileContents.split("\\r?\\n?<br>");
+				bis.close();
+				is.close();
+				return true;
+			}
+			catch (Exception ex) {
+				Log.e("FRIG", "makeDefault", ex);
+			}
+			return false;
 		}
-		byte[] bytes = new byte[8192];
-		int byteCount;
-		int total = 0;
-		try {
+		
+	}
+	
+	public static class AeSimpleSHA1 {
+		private static String convertToHex(byte[] data) {
+			StringBuilder buf = new StringBuilder();
+			for (byte b : data) {
+				int halfbyte = (b >>> 4) & 0x0F;
+				int two_halfs = 0;
+				do {
+					buf.append((0 <= halfbyte) && (halfbyte <= 9) ? (char) ('0' + halfbyte) : (char) ('a' + (halfbyte - 10)));
+					halfbyte = b & 0x0F;
+				} while (two_halfs++ < 1);
+			}
+			return buf.toString();
+		}
+
+		public static String SHA1(String filepath) throws NoSuchAlgorithmException, IOException {
+			MessageDigest sha1 = MessageDigest.getInstance("SHA-1");
+			FileInputStream in = new FileInputStream(filepath);
+			byte[] bytes = new byte[8192];
+			int byteCount;
+			int total = 0;
 			while ((byteCount = in.read(bytes)) > 0) {
 			    total += byteCount;
-			    digester.update(bytes, 0, byteCount);
+			    sha1.update(bytes, 0, byteCount);
 			    Log.d("sha", "processed " + total);
 			}
-		} catch (IOException e) {
-			e.printStackTrace();
-			return "";
+			byte[] sha1hash = sha1.digest();
+			return convertToHex(sha1hash);
 		}
-		in.close();
-		return digester.toString();
 	}
+
 }

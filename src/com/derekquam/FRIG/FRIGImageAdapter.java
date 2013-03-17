@@ -34,12 +34,14 @@ public class FRIGImageAdapter extends BaseAdapter {
 	public class Image {
 		String url;
 		String name;
+		String caption;
 		Bitmap thumb;
 	}
 
 	// an array of resources we want to display
 	private ArrayList<Image> mImages;
 	private boolean mGetAll;
+	private String mTeam;
 
 	// a context so we can later create a view within it
 	private Context mContext;
@@ -54,14 +56,15 @@ public class FRIGImageAdapter extends BaseAdapter {
 		mContext = c;
 
 		// get our thumbnail generation task ready to execute
-		mThumbnailGen = new LoadThumbsTask();
 		mImages = new ArrayList<Image>();
 		mCache = new DiskLruImageCache(c, "FRIG", 52428800, CompressFormat.JPEG, 70);
 		Image defaultImage = new Image();
 		defaultImage.url = "";
 		defaultImage.name = "Default";
+		defaultImage.caption = "Default";
 		defaultImage.thumb = null;
 		mImages.add(defaultImage);
+		mTeam = team;
 
 		// we'll want to use pre-existing data, if it exists
 		//		if(previousList != null) {
@@ -83,27 +86,47 @@ public class FRIGImageAdapter extends BaseAdapter {
 			mDataGetter.execute("http://www.derekquam.com/frig/TeamPics.php?team=" + team);
 		}
 	}
+	
+	public void refresh() {
+		mDataGetter = new GetDataTask();
+		if (mGetAll) {
+			mDataGetter.execute("http://www.derekquam.com/frig/TeamList.php?plain");
+		} else {
+			mDataGetter.execute("http://www.derekquam.com/frig/TeamPics.php?team=" + mTeam);
+		}
+	}
 
 	private void dataGot(String[] data) {
 		if (data != null) {
 			mImages.clear();
 			for(int i = 0, j = data.length; i < j; i++) {
-				mImages.add(new Image());
-				if (mGetAll) {
-					mImages.get(i).name = data[i];
-				} else {
-					mImages.get(i).name = "";
+				if (data[i].length() > 0) {
+					mImages.add(new Image());
+					if (mGetAll) {
+						mImages.get(i).caption = data[i].substring(0, data[i].indexOf('|'));
+						try {
+							mImages.get(i).name = data[i].substring(data[i].lastIndexOf('|') + 1,
+									data[i].indexOf("."));
+						} catch (Exception ex) {
+							mImages.get(i).name = "";
+						}
+					} else {
+						mImages.get(i).caption = "";
+						mImages.get(i).name = data[i].substring(data[i].lastIndexOf('/') + 1,
+								data[i].indexOf('.', data[i].lastIndexOf('/')));
+					}
+					if (mGetAll) {
+						mImages.get(i).url = "http://www.derekquam.com/frig/images/" + mImages.get(i).caption + "/" + mImages.get(i).name + ".default.jpg"; 
+					} else {
+						mImages.get(i).url = data[i];
+					}
+					this.notifyDataSetChanged();
 				}
-				if (mGetAll) {
-					mImages.get(i).url =  "http://www.derekquam.com/frig/images/" + data[i] + "-1.jpg";
-				} else {
-					mImages.get(i).url = data[i];
-				}
-				this.notifyDataSetChanged();
 			}
 		}
 
 		// start the background task to generate thumbs
+		mThumbnailGen = new LoadThumbsTask();
 		mThumbnailGen.execute(mImages.toArray(new Image[mImages.size()]));
 	}
 
@@ -177,11 +200,11 @@ public class FRIGImageAdapter extends BaseAdapter {
 			} else {
 				view  = new ThumbnailView(mContext, cached);
 			}
-			view.setLayoutParams(new GridView.LayoutParams(width / 2, width / 2));
 		} else {
 			// recycle an old view (it might have old thumbs in it!)
 			view = (ThumbnailView)convertView;
 		}
+		view.setLayoutParams(new GridView.LayoutParams(width / 2, width / 2));
 
 		// do we have a thumb stored in cache?
 		if(cached.thumb == null) {
@@ -192,7 +215,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 			view.setImage(cached.thumb);
 		}
 		if (mGetAll) {
-			((IconView) view).SetText(cached.name);
+			((IconView) view).SetText(cached.caption);
 		}
 		return view;
 	}
@@ -268,12 +291,14 @@ public class FRIGImageAdapter extends BaseAdapter {
 				if (i.thumb != null) continue;
 				
 				// check cache
-				if (mCache.containsKey(i.name)) {
-					i.thumb = mCache.getBitmap(i.name);
-				} else { // download thumb
-					i.thumb = downloadThumb(i.url);
-					if (i.thumb != null) {
-						mCache.put(i.name, i.thumb);
+				if (i.name != "") {
+					if (mCache.containsKey(i.name)) {
+						i.thumb = mCache.getBitmap(i.name);
+					} else { // download thumb
+						i.thumb = downloadThumb(i.url);
+						if (i.thumb != null) {
+							mCache.put(i.name, i.thumb);
+						}
 					}
 				}
 
@@ -354,7 +379,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 		public IconView(Context context, Image image) {
 			super(context, image);
 			mTextView = new TextView(context);
-			mTextView.setText(image.name);
+			mTextView.setText(image.caption);
 			mTextView.setTextSize(25);
 			mTextView.setTextColor(Color.WHITE);
 			mTextView.setBackgroundColor(0xaa888888);
