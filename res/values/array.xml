@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string-array name="regions">
+        <item>Wisconsin Regional 2012</item>
+        <item>Finger Lakes 2013</item>
+        <item>Boliermaker Regional 2013</item>
+        <item>Wisconsin Regional</item>
+        <item>Crossroads Regional</item>
+    </string-array>
+
+</resources>

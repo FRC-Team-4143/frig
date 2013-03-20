@@ -97,15 +97,18 @@ public class FRIGTeamActivity extends Activity {
 		mGallery.setOnItemLongClickListener(new OnItemLongClickListener() {
 
 			@Override
-			public boolean onItemLongClick(AdapterView<?> arg0, View arg1,
-					int arg2, long arg3) {
-				AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(arg0.getContext());                      
+			public boolean onItemLongClick(AdapterView<?> parent, View view,
+					int position, long id) {
+				final AdapterView<?> mParent = parent;
+				final int mPosition = position;
+				AlertDialog.Builder dlgAlert  = new AlertDialog.Builder(parent.getContext());                      
 				dlgAlert.setTitle("Default"); 
 				dlgAlert.setMessage("Make this the default image?"); 
 				dlgAlert.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
 					public void onClick(DialogInterface dialog, int whichButton) {
 						SetDefault task = new SetDefault();
-						task.execute(team, );
+						task.execute(team, ((Image)mParent.getAdapter().getItem(mPosition)).name);
+						setResult(RESULT_OK);
 						dialog.dismiss();
 					}
 				});
