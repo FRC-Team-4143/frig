@@ -8,7 +8,6 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.Authenticator;
 import java.net.HttpURLConnection;
 import java.net.PasswordAuthentication;
@@ -34,13 +33,11 @@ import android.provider.MediaStore;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
-import android.view.View.OnLongClickListener;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemLongClickListener;
 import android.widget.Button;
 import android.widget.GridView;
 import android.widget.TextView;
-import android.widget.Toast;
 
 public class FRIGTeamActivity extends Activity {
 	private static final String TAG = "FRIGTeamActivity";
@@ -48,17 +45,13 @@ public class FRIGTeamActivity extends Activity {
 	private static final int REPLACE_IMAGE_ACTIVITY_REQUEST_CODE = 101;
 	private Uri fileUri;
 	private String team;
-	private static int nextPic = 1;
-	private static int picNo = 1;
 	private static int width = 800;
 	private static int quality = 70;
 	private UploadPictureTask mUploader;
 	private GridView mGallery;
-	private static File mCacheDir;
 	
 
 	private static Uri getOutputPictureFileUri(String teamName) {
-		File cacheDir = new File(Environment.getDownloadCacheDirectory(), "FRIG");
 		File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(
 				Environment.DIRECTORY_PICTURES), "FRIG");
 
@@ -77,7 +70,6 @@ public class FRIGTeamActivity extends Activity {
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.team_new);
-		mCacheDir = getCacheDir();
 
 		Bundle lExtras = getIntent().getExtras();
 		if (lExtras == null) {
@@ -149,9 +141,6 @@ public class FRIGTeamActivity extends Activity {
 		if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE ||
 				requestCode == REPLACE_IMAGE_ACTIVITY_REQUEST_CODE) {
 			if (resultCode == RESULT_OK) {
-				if (requestCode == CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE) {
-					picNo = mGallery.getAdapter().getCount() + 1;
-				}
 				String outPath = ResizePicture(fileUri.getPath(), width);
 				mUploader = new UploadPictureTask();
 				mUploader.execute(outPath);
@@ -229,7 +218,7 @@ public class FRIGTeamActivity extends Activity {
 		HttpURLConnection connection = null;
 		DataOutputStream outputStream = null;
 
-		String urlServer = "http://www.derekquam.com/handle_upload.php";
+		String urlServer = "http://frig.marswars.org/handle_upload.php";
 		String lineEnd = "\r\n";
 		String twoHyphens = "--";
 		String boundary =  "*****";
@@ -343,7 +332,7 @@ public class FRIGTeamActivity extends Activity {
 						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
 					}
 				});
-				URL url = new URL("http://www.derekquam.com/frig/set_default.php?team=" + team + "&image=" + image);
+				URL url = new URL("http://frig.marswars.org/set_default.php?team=" + team + "&image=" + image);
 				URLConnection connection = url.openConnection();
 				connection.connect();
 				InputStream is = connection.getInputStream();

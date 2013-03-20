@@ -6,21 +6,15 @@ import android.annotation.TargetApi;
 import android.app.ActionBar;
 import android.app.ActionBar.OnNavigationListener;
 import android.app.Activity;
-import android.app.Fragment;
-import android.app.FragmentManager;
-import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
-import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.AdapterView.OnItemClickListener;
 import android.widget.ArrayAdapter;
 import android.widget.GridView;
 import android.widget.SpinnerAdapter;
-import android.widget.TextView;
 
 @TargetApi(Build.VERSION_CODES.ICE_CREAM_SANDWICH)
 public class FRIGTeamsActivity extends Activity {
@@ -34,12 +28,12 @@ public class FRIGTeamsActivity extends Activity {
 
 		// Set up gridview of images
 		mGridview = (GridView)findViewById(R.id.gridview);
-		mGridview.setAdapter(new FRIGImageAdapter(this, mGridview, ""));
+		mGridview.setAdapter(new FRIGImageAdapter(this, mGridview, 1));
 		mGridview.setOnItemClickListener(new OnItemClickListener() {  
-			@Override  
+			@Override
 			public void onItemClick(AdapterView<?> parent, View view, int position,  
 					long id) {
-				Image item = (Image) parent.getAdapter().getItem(position);
+				Image item = (Image)parent.getAdapter().getItem(position);
 				Intent lIntent = new Intent(FRIGTeamsActivity.this, FRIGTeamActivity.class);
 				lIntent.putExtra("Team", item.caption);
 				startActivityForResult(lIntent, DEFAULT_PICTURE);
@@ -51,10 +45,10 @@ public class FRIGTeamsActivity extends Activity {
 		actionBar.setNavigationMode(ActionBar.NAVIGATION_MODE_LIST);
 		OnNavigationListener mOnNavigationListener = new OnNavigationListener() {
 			// Get the same strings provided for the drop-down's ArrayAdapter
-			String[] regions = getResources().getStringArray(R.array.regions);
 
 			@Override
 			public boolean onNavigationItemSelected(int position, long itemId) {
+				((FRIGImageAdapter) mGridview.getAdapter()).setRegion(position + 1);
 				return true;
 			}
 		};
@@ -71,27 +65,5 @@ public class FRIGTeamsActivity extends Activity {
 				((FRIGImageAdapter) mGridview.getAdapter()).refresh();
 			}
 		}
-	}
-	
-	public class RegionFragment extends Fragment {
-	    private String mText;
-
-	    @Override
-	    public void onAttach(Activity activity) {
-	      // This is the first callback received; here we can set the text for
-	      // the fragment as defined by the tag specified during the fragment transaction
-	      super.onAttach(activity);
-	      mText = getTag();
-	    }
-
-	    @Override
-	    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-	            Bundle savedInstanceState) {
-	        // This is called to define the layout for the fragment;
-	        // we just create a TextView and set its text to be the fragment tag
-	        TextView text = new TextView(getActivity());
-	        text.setText(mText);
-	        return text;
-	    }
 	}
 }

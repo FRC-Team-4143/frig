@@ -42,6 +42,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 	private ArrayList<Image> mImages;
 	private boolean mGetAll;
 	private String mTeam;
+	private int mRegion;
 
 	// a context so we can later create a view within it
 	private Context mContext;
@@ -52,7 +53,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 	private DiskLruImageCache mCache;
 
 	// Constructor
-	public FRIGImageAdapter(Context c, Object previousList, String team) {
+	public FRIGImageAdapter(Context c, Object previousList, String team, int region) {
 		mContext = c;
 
 		// get our thumbnail generation task ready to execute
@@ -65,6 +66,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 		defaultImage.thumb = null;
 		mImages.add(defaultImage);
 		mTeam = team;
+		mRegion = region;
 
 		// we'll want to use pre-existing data, if it exists
 		//		if(previousList != null) {
@@ -81,18 +83,31 @@ public class FRIGImageAdapter extends BaseAdapter {
 		mGetAll = team.isEmpty();
 		mDataGetter = new GetDataTask();
 		if (mGetAll) {
-			mDataGetter.execute("http://www.derekquam.com/frig/TeamList.php?plain");
+			mDataGetter.execute("http://frig.marswars.org/TeamList.php?plain&region=" + region);
 		} else {
-			mDataGetter.execute("http://www.derekquam.com/frig/TeamPics.php?team=" + team);
+			mDataGetter.execute("http://frig.marswars.org/TeamPics.php?team=" + team);
 		}
+	}
+	
+	public FRIGImageAdapter(Context c, Object previousList, String team) {
+		this(c, previousList, team, -1);
+	}
+	
+	public FRIGImageAdapter(Context c, Object previousList, int region) {
+		this(c, previousList, "", region);
+	}
+	
+	public void setRegion(int xRegion) {
+		mRegion = xRegion;
+		refresh();
 	}
 	
 	public void refresh() {
 		mDataGetter = new GetDataTask();
 		if (mGetAll) {
-			mDataGetter.execute("http://www.derekquam.com/frig/TeamList.php?plain");
+			mDataGetter.execute("http://frig.marswars.org/TeamList.php?plain&region=" + mRegion);
 		} else {
-			mDataGetter.execute("http://www.derekquam.com/frig/TeamPics.php?team=" + mTeam);
+			mDataGetter.execute("http://frig.marswars.org/TeamPics.php?team=" + mTeam);
 		}
 	}
 
@@ -116,7 +131,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 								data[i].indexOf('.', data[i].lastIndexOf('/')));
 					}
 					if (mGetAll) {
-						mImages.get(i).url = "http://www.derekquam.com/frig/images/" + mImages.get(i).caption + "/" + mImages.get(i).name + ".default.jpg"; 
+						mImages.get(i).url = "http://frig.marswars.org/images/" + mImages.get(i).caption + "/" + mImages.get(i).name + ".default.jpg"; 
 					} else {
 						mImages.get(i).url = data[i];
 					}
@@ -342,7 +357,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
 					}
 				});
-				URL url = new URL(address);//"http://www.derekquam.com/frig/TeamList.php?plain");
+				URL url = new URL(address);
 				URLConnection connection = url.openConnection();
 				connection.connect();
 				InputStream is = connection.getInputStream();
