@@ -103,6 +103,8 @@ public class FRIGImageAdapter extends BaseAdapter {
 	}
 	
 	public void refresh() {
+		mImages.clear();
+		this.notifyDataSetChanged();
 		mDataGetter = new GetDataTask();
 		if (mGetAll) {
 			mDataGetter.execute("http://frig.marswars.org/TeamList.php?plain&region=" + mRegion);
@@ -352,11 +354,11 @@ public class FRIGImageAdapter extends BaseAdapter {
 
 		private String[] getLinesFromUrl(String address) {
 			try {
-				Authenticator.setDefault(new Authenticator() {
-					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
-					}
-				});
+//				Authenticator.setDefault(new Authenticator() {
+//					protected PasswordAuthentication getPasswordAuthentication() {
+//						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
+//					}
+//				});
 				URL url = new URL(address);
 				URLConnection connection = url.openConnection();
 				connection.connect();

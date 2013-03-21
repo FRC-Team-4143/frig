@@ -4,9 +4,9 @@
     <string-array name="regions">
         <item>Wisconsin Regional 2012</item>
         <item>Finger Lakes 2013</item>
+        <item>Wisconsin Regional 2013</item>
         <item>Boliermaker Regional 2013</item>
-        <item>Wisconsin Regional</item>
-        <item>Crossroads Regional</item>
+        <item>Crossroads Regional 2013</item>
     </string-array>
 
 </resources>

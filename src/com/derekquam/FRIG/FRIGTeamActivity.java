@@ -327,11 +327,11 @@ public class FRIGTeamActivity extends Activity {
 		
 		private Boolean makeDefault(String team, String image) {
 			try {
-				Authenticator.setDefault(new Authenticator() {
-					protected PasswordAuthentication getPasswordAuthentication() {
-						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
-					}
-				});
+//				Authenticator.setDefault(new Authenticator() {
+//					protected PasswordAuthentication getPasswordAuthentication() {
+//						return new PasswordAuthentication("FRIGApp","correcthorsebatterystaple".toCharArray());
+//					}
+//				});
 				URL url = new URL("http://frig.marswars.org/set_default.php?team=" + team + "&image=" + image);
 				URLConnection connection = url.openConnection();
 				connection.connect();
