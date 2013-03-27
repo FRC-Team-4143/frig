@@ -35,6 +35,7 @@ public class FRIGImageAdapter extends BaseAdapter {
 		String url;
 		String name;
 		String caption;
+		String teamName;
 		Bitmap thumb;
 	}
 
@@ -120,12 +121,22 @@ public class FRIGImageAdapter extends BaseAdapter {
 				if (data[i].length() > 0) {
 					mImages.add(new Image());
 					if (mGetAll) {
-						mImages.get(i).caption = data[i].substring(0, data[i].indexOf('|'));
+						int firstPipe = data[i].indexOf('|');
+						int secondPipe = data[i].indexOf('|', firstPipe + 1);
+						mImages.get(i).caption = data[i].substring(0, firstPipe);
 						try {
-							mImages.get(i).name = data[i].substring(data[i].lastIndexOf('|') + 1,
-									data[i].indexOf("."));
+							mImages.get(i).name = "";
+							if (data[i].indexOf('.', firstPipe + 1) < secondPipe) {
+								mImages.get(i).name = data[i].substring(firstPipe + 1,
+										data[i].indexOf('.', firstPipe + 1));
+							}
+							mImages.get(i).teamName = data[i].substring(secondPipe + 1);
+							if (mImages.get(i).teamName.trim() == "") {
+								mImages.get(i).teamName = "Unknown";
+							}
 						} catch (Exception ex) {
 							mImages.get(i).name = "";
+							mImages.get(i).teamName = "";
 						}
 					} else {
 						mImages.get(i).caption = "";
