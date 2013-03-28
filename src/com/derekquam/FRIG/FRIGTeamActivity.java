@@ -47,6 +47,7 @@ public class FRIGTeamActivity extends Activity {
 	private Uri fileUri;
 	private String team;
 	private String name;
+	private String region;
 	private static int width = 800;
 	private static int quality = 70;
 	private UploadPictureTask mUploader;
@@ -79,6 +80,7 @@ public class FRIGTeamActivity extends Activity {
 		}
 
 		// Get data via the key
+		region = lExtras.getString("region");
 		team = lExtras.getString("team");
 		name = lExtras.getString("name");
 		if (team != null && name != null) {
@@ -129,6 +131,17 @@ public class FRIGTeamActivity extends Activity {
 
 				// start the image capture Intent
 				startActivityForResult(intent, CAPTURE_IMAGE_ACTIVITY_REQUEST_CODE);
+			}
+		});
+		
+		Button lTeamInfo = (Button)findViewById(R.id.btnTeamInfo);
+		lTeamInfo.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View xView) {
+				String url = "http://frig.marswars.org/RecordScoutData.php?team=" + team + "&region=" + region;
+				Intent intent = new Intent(Intent.ACTION_VIEW);
+				intent.setData(Uri.parse(url));
+				startActivity(intent);
 			}
 		});
 	}

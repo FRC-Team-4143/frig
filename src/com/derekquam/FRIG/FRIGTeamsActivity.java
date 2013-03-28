@@ -48,6 +48,7 @@ public class FRIGTeamsActivity extends Activity {
 				Intent lIntent = new Intent(FRIGTeamsActivity.this, FRIGTeamActivity.class);
 				lIntent.putExtra("team", item.caption);
 				lIntent.putExtra("name", item.teamName);
+				lIntent.putExtra("region", mRegion);
 				startActivityForResult(lIntent, DEFAULT_PICTURE);
 			}
 		});
