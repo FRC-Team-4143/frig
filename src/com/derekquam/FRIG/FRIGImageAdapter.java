@@ -126,7 +126,8 @@ public class FRIGImageAdapter extends BaseAdapter {
 						mImages.get(i).caption = data[i].substring(0, firstPipe);
 						try {
 							mImages.get(i).name = "";
-							if (data[i].indexOf('.', firstPipe + 1) < secondPipe) {
+							int firstPeriod = data[i].indexOf('.', firstPipe + 1);
+							if (firstPeriod != -1 && firstPeriod < secondPipe) {
 								mImages.get(i).name = data[i].substring(firstPipe + 1,
 										data[i].indexOf('.', firstPipe + 1));
 							}

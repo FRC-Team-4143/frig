@@ -31,6 +31,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.widget.AdapterView;
@@ -45,6 +46,7 @@ public class FRIGTeamActivity extends Activity {
 	private static final int REPLACE_IMAGE_ACTIVITY_REQUEST_CODE = 101;
 	private Uri fileUri;
 	private String team;
+	private String name;
 	private static int width = 800;
 	private static int quality = 70;
 	private UploadPictureTask mUploader;
@@ -77,10 +79,10 @@ public class FRIGTeamActivity extends Activity {
 		}
 
 		// Get data via the key
-		team = lExtras.getString("Team");
-		if (team != null) {
-			TextView lblTeam = (TextView)findViewById(R.id.txtTeamID);
-			lblTeam.setText("Team " + team);
+		team = lExtras.getString("team");
+		name = lExtras.getString("name");
+		if (team != null && name != null) {
+			this.getActionBar().setTitle("Team " + team + " - " + name);
 		}
 
 		mGallery = (GridView)findViewById(R.id.teamPics);
@@ -150,6 +152,20 @@ public class FRIGTeamActivity extends Activity {
 				// Image capture failed, advise user
 			}
 		}
+	}
+	
+	@Override
+	public boolean onOptionsItemSelected(MenuItem item) {
+	    switch (item.getItemId()) {
+	        case android.R.id.home:
+	            // app icon in action bar clicked; go home
+	            Intent intent = new Intent(this, FRIGTeamsActivity.class);
+	            intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
+	            startActivity(intent);
+	            return true;
+	        default:
+	            return super.onOptionsItemSelected(item);
+	    }
 	}
 
 	protected String ResizePicture(String imagePath, int desiredWidth) {
